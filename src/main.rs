@@ -65,8 +65,51 @@ fn day2() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn day3() -> Result<(), Box<dyn Error>> {
+    let file = File::open("day3.txt")?;
+    let reader = BufReader::new(file);
+
+    let mut map = Vec::new();
+    let mut height = 0;
+    for line in reader.lines() {
+        map.extend(line?.as_bytes());
+        height += 1;
+    }
+    let width = map.len() / height;
+
+    fn run(map: &[u8], width: usize, height: usize, sx: usize, sy: usize) -> usize {
+        let mut y = 0;
+        let mut x = 0;
+        let mut trees = 0;
+        while y < height {
+            if map[y * width + x] == b'#' {
+                trees += 1;
+            }
+            x += sx;
+            y += sy;
+            if x >= width {
+                x = x % width;
+            }
+        }
+        trees
+    }
+
+    let trees_11 = run(&map, width, height, 1, 1);
+    let trees_31 = run(&map, width, height, 3, 1);
+    let trees_51 = run(&map, width, height, 5, 1);
+    let trees_71 = run(&map, width, height, 7, 1);
+    let trees_12 = run(&map, width, height, 1, 2);
+    println!(
+        "{} {}",
+        trees_31,
+        trees_11 * trees_31 * trees_51 * trees_71 * trees_12
+    );
+    Ok(())
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     day1()?;
     day2()?;
+    day3()?;
     Ok(())
 }
