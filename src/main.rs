@@ -78,15 +78,13 @@ fn day3() -> Result<(), Box<dyn Error>> {
     let width = map.len() / height;
 
     let run = |sx, sy| {
-        let mut y = 0;
         let mut x = 0;
         let mut trees = 0;
-        while y < height {
+        for y in (0..height).step_by(sy) {
             if map[y * width + x] == b'#' {
                 trees += 1;
             }
             x += sx;
-            y += sy;
             if x >= width {
                 x = x % width;
             }
