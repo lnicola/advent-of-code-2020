@@ -200,10 +200,41 @@ fn day4() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn day5() -> Result<(u16, u16), Box<dyn Error>> {
+    let file = File::open("day5.txt")?;
+    let reader = BufReader::new(file);
+
+    let mut max_seat_id = 0u16;
+    let mut taken = [false; 1023];
+    for line in reader.lines() {
+        let line = line?;
+        let line = line.as_bytes();
+        let mut row = 0;
+        let mut col = 0;
+        for &ch in &line[..7] {
+            row = row << 1 | (ch == b'B') as u16;
+        }
+        for &ch in &line[7..] {
+            col = col << 1 | (ch == b'R') as u16;
+        }
+        let seat_id = row << 3 | col;
+        max_seat_id = max_seat_id.max(seat_id);
+        taken[seat_id as usize] = true;
+    }
+    for i in 1..=1022 {
+        if !taken[i] && taken[i - 1] && taken[i + 1] {
+            return Ok((max_seat_id, i as u16));
+        }
+    }
+    panic!("no solution");
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     assert_eq!(day1()?, (539851, 212481360));
     day2()?;
     day3()?;
     day4()?;
+    day5()?;
+    assert_eq!(day5()?, (947, 636));
     Ok(())
 }
