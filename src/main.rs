@@ -1,6 +1,7 @@
 use std::error::Error;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
+use std::iter;
 
 fn day1() -> Result<(u32, u32), Box<dyn Error>> {
     let file = File::open("day1.txt")?;
@@ -121,84 +122,78 @@ fn day4() -> Result<(), Box<dyn Error>> {
 
     let mut valid1 = 0;
     let mut valid2 = 0;
-    let mut lines = reader.lines();
-    loop {
-        let mut has = NUL;
-        let mut valid = NUL;
-        let mut done = true;
-        while let Some(line) = lines.next() {
-            let line = line?;
-            if line.is_empty() {
-                done = false;
-                break;
-            }
-            for part in line.split(' ') {
-                let val = &part[4..];
-                match &part[..3] {
-                    "byr" => {
-                        has |= BYR;
-                        if matches!(val.parse(), Ok(1920..=2002)) {
-                            valid |= BYR;
-                        }
-                    }
-                    "iyr" => {
-                        has |= IYR;
-                        if matches!(val.parse(), Ok(2010..=2020)) {
-                            valid |= IYR;
-                        }
-                    }
-                    "eyr" => {
-                        has |= EYR;
-                        if matches!(val.parse(), Ok(2020..=2030)) {
-                            valid |= EYR;
-                        }
-                    }
-                    "hgt" => {
-                        has |= HGT;
-                        if val.len() > 2
-                            && matches!(
-                                (&val[val.len() - 2..], val[..val.len() - 2].parse()),
-                                ("cm", Ok(150..=193)) | ("in", Ok(59..=76))
-                            )
-                        {
-                            valid |= HGT;
-                        }
-                    }
-                    "hcl" => {
-                        has |= HCL;
-                        if val.len() == 7
-                            && val.starts_with('#')
-                            && (&val[1..])
-                                .chars()
-                                .all(|c| c.is_ascii_digit() || c >= 'a' && c <= 'f')
-                        {
-                            valid |= HCL;
-                        }
-                    }
-                    "ecl" => {
-                        has |= ECL;
-                        if matches!(val, "amb" | "blu" | "brn" | "gry" | "grn" | "hzl" | "oth") {
-                            valid |= ECL;
-                        }
-                    }
-                    "pid" => {
-                        has |= PID;
-                        if val.len() == 9 && val.chars().all(|c| c.is_ascii_digit()) {
-                            valid |= PID;
-                        }
-                    }
-                    _ => {}
+    let mut has = NUL;
+    let mut valid = NUL;
+    for line in reader.lines().chain(iter::once(Ok(String::new()))) {
+        let line = line?;
+        if line.is_empty() {
+            if has == ALL {
+                valid1 += 1;
+                if valid == ALL {
+                    valid2 += 1;
                 }
             }
+            has = NUL;
+            valid = NUL;
+            continue;
         }
-        if has == ALL {
-            valid1 += 1;
-            if valid == ALL {
-                valid2 += 1;
+        for part in line.split(' ') {
+            let val = &part[4..];
+            match &part[..3] {
+                "byr" => {
+                    has |= BYR;
+                    if matches!(val.parse(), Ok(1920..=2002)) {
+                        valid |= BYR;
+                    }
+                }
+                "iyr" => {
+                    has |= IYR;
+                    if matches!(val.parse(), Ok(2010..=2020)) {
+                        valid |= IYR;
+                    }
+                }
+                "eyr" => {
+                    has |= EYR;
+                    if matches!(val.parse(), Ok(2020..=2030)) {
+                        valid |= EYR;
+                    }
+                }
+                "hgt" => {
+                    has |= HGT;
+                    if val.len() > 2
+                        && matches!(
+                            (&val[val.len() - 2..], val[..val.len() - 2].parse()),
+                            ("cm", Ok(150..=193)) | ("in", Ok(59..=76))
+                        )
+                    {
+                        valid |= HGT;
+                    }
+                }
+                "hcl" => {
+                    has |= HCL;
+                    if val.len() == 7
+                        && val.starts_with('#')
+                        && (&val[1..])
+                            .chars()
+                            .all(|c| c.is_ascii_digit() || c >= 'a' && c <= 'f')
+                    {
+                        valid |= HCL;
+                    }
+                }
+                "ecl" => {
+                    has |= ECL;
+                    if matches!(val, "amb" | "blu" | "brn" | "gry" | "grn" | "hzl" | "oth") {
+                        valid |= ECL;
+                    }
+                }
+                "pid" => {
+                    has |= PID;
+                    if val.len() == 9 && val.chars().all(|c| c.is_ascii_digit()) {
+                        valid |= PID;
+                    }
+                }
+                _ => {}
             }
-        }
-        if done {
-            break;
         }
     }
     println!("{} {}", valid1, valid2);
