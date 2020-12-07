@@ -1,7 +1,12 @@
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::error::Error;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::iter;
+
+use self::interner::Interner;
+
+pub mod interner;
 
 fn day1() -> Result<(u32, u32), Box<dyn Error>> {
     let file = File::open("day1.txt")?;
@@ -258,6 +263,79 @@ fn day6() -> Result<(u16, u16), Box<dyn Error>> {
     Ok((count1, count2))
 }
 
+fn day7() -> Result<(usize, usize), Box<dyn Error>> {
+    let file = File::open("day7.txt")?;
+    let reader = BufReader::new(file);
+
+    let mut bag_types = Interner::new();
+    let mut nestings = HashMap::new();
+    let mut allowed_in = HashMap::new();
+    for line in reader.lines() {
+        let line = line?;
+        let bag_type = line[..line.find(" bags").unwrap()].to_string();
+        let contents = &line[line.find("contain ").unwrap() + 8..];
+        let outer = bag_types.insert(bag_type);
+        let mut bag_contents = Vec::new();
+        if contents != "no other bags." {
+            for inner_bag in contents.split(|c| c == ',' || c == '.') {
+                if !inner_bag.is_empty() {
+                    let inner_bag = inner_bag.trim();
+                    let p = inner_bag.find(' ').unwrap();
+                    let count = inner_bag[..p].parse::<usize>()?;
+                    let p2 = inner_bag[p + 1..].find(" bag").unwrap() + p + 1;
+                    let inner_type = inner_bag[p + 1..p2].to_string();
+                    let inner = bag_types.insert(inner_type);
+                    bag_contents.push((inner, count));
+                    allowed_in.entry(inner).or_insert(Vec::new()).push(outer);
+                }
+            }
+        }
+        nestings.insert(outer, bag_contents);
+    }
+
+    let shiny_gold_bag = *bag_types.get("shiny gold").unwrap();
+
+    let mut q = VecDeque::new();
+    let mut visited = HashSet::new();
+    q.push_back(shiny_gold_bag);
+    let mut sol1 = HashSet::new();
+    while let Some(bag) = q.pop_front() {
+        visited.insert(bag);
+        if let Some(bags) = allowed_in.get(&bag) {
+            for &bag in bags {
+                if !visited.contains(&bag) {
+                    sol1.insert(bag);
+                    q.push_back(bag);
+                }
+            }
+        }
+    }
+
+    fn p2(
+        bag: usize,
+        nestings: &HashMap<usize, Vec<(usize, usize)>>,
+        descendants: &mut [usize],
+    ) -> usize {
+        if descendants[bag] != usize::MAX {
+            return descendants[bag];
+        }
+
+        let mut res = 1;
+        if let Some(bags) = nestings.get(&bag) {
+            for &(inner, count) in bags {
+                res += count * p2(inner, nestings, descendants);
+            }
+        }
+        descendants[bag] = res;
+        res
+    }
+    let mut descendants = vec![usize::MAX; bag_types.len()];
+    Ok((
+        sol1.len(),
+        p2(shiny_gold_bag, &nestings, &mut descendants) - 1,
+    ))
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     assert_eq!(day1()?, (539851, 212481360));
     day2()?;
@@ -265,5 +343,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     day4()?;
     assert_eq!(day5()?, (947, 636));
     assert_eq!(day6()?, (6565, 3137));
+    assert_eq!(day7()?, (161, 30899));
     Ok(())
 }
