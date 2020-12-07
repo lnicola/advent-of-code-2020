@@ -229,12 +229,41 @@ fn day5() -> Result<(u16, u16), Box<dyn Error>> {
     panic!("no solution");
 }
 
+fn day6() -> Result<(u16, u16), Box<dyn Error>> {
+    let file = File::open("day6.txt")?;
+    let reader = BufReader::new(file);
+
+    let mut count1 = 0;
+    let mut count2 = 0;
+    let mut answers1 = [false; 26];
+    let mut answers2 = [true; 26];
+    for line in reader.lines().chain(iter::once(Ok(String::new()))) {
+        let line = line?;
+        if line.is_empty() {
+            count1 += answers1.iter().filter(|&&p| p).count() as u16;
+            count2 += answers2.iter().filter(|&&p| p).count() as u16;
+            answers1 = [false; 26];
+            answers2 = [true; 26];
+            continue;
+        }
+        let mut ans = [false; 26];
+        for &ch in line.as_bytes() {
+            answers1[(ch - b'a') as usize] = true;
+            ans[(ch - b'a') as usize] = true;
+        }
+        for (p, &q) in answers2.iter_mut().zip(ans.iter()) {
+            *p &= q;
+        }
+    }
+    Ok((count1, count2))
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     assert_eq!(day1()?, (539851, 212481360));
     day2()?;
     day3()?;
     day4()?;
-    day5()?;
     assert_eq!(day5()?, (947, 636));
+    assert_eq!(day6()?, (6565, 3137));
     Ok(())
 }
