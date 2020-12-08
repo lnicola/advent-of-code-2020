@@ -336,6 +336,83 @@ fn day7() -> Result<(usize, usize), Box<dyn Error>> {
     ))
 }
 
+fn day8() -> Result<(i32, i32), Box<dyn Error>> {
+    #[derive(Copy, Clone)]
+    enum Instruction {
+        Nop(i32),
+        Acc(i32),
+        Jmp(i32),
+    }
+
+    let file = File::open("day8.txt")?;
+    let reader = BufReader::new(file);
+
+    let mut program = Vec::new();
+    for line in reader.lines() {
+        let line = line?;
+        let mut it = line.split(' ');
+        let opcode = it.next().unwrap();
+        let param = it.next().unwrap();
+        let param = param.parse().unwrap();
+        let instruction = match opcode {
+            "nop" => Instruction::Nop(param),
+            "acc" => Instruction::Acc(param),
+            "jmp" => Instruction::Jmp(param),
+            _ => unreachable!(),
+        };
+        program.push(instruction);
+    }
+
+    enum ExecutionResult {
+        Loop(i32),
+        Finished(i32),
+    }
+
+    fn run(program: &[Instruction], executed: &mut [bool]) -> ExecutionResult {
+        let mut pc = 0;
+        let mut acc = 0;
+        while !executed[pc as usize] {
+            executed[pc as usize] = true;
+            match program[pc as usize] {
+                Instruction::Nop(_) => pc += 1,
+                Instruction::Acc(p) => {
+                    acc += p;
+                    pc += 1
+                }
+                Instruction::Jmp(r) => pc = pc + r as isize,
+            }
+            if pc < 0 || pc >= program.len() as isize {
+                return ExecutionResult::Finished(acc);
+            }
+        }
+        ExecutionResult::Loop(acc)
+    }
+
+    let mut executed = vec![false; program.len()];
+    let p1 = match run(&program, executed.as_mut_slice()) {
+        ExecutionResult::Loop(acc) => acc,
+        _ => unreachable!(),
+    };
+
+    for i in 0..program.len() {
+        for p in &mut executed {
+            *p = false;
+        }
+
+        let saved = program[i];
+        match program[i] {
+            Instruction::Nop(acc) => program[i] = Instruction::Jmp(acc),
+            Instruction::Jmp(r) => program[i] = Instruction::Nop(r),
+            _ => {}
+        }
+        if let ExecutionResult::Finished(acc) = run(&program, executed.as_mut_slice()) {
+            return Ok((p1, acc));
+        }
+        program[i] = saved;
+    }
+    panic!("no solution");
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     assert_eq!(day1()?, (539851, 212481360));
     day2()?;
@@ -344,5 +421,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     assert_eq!(day5()?, (947, 636));
     assert_eq!(day6()?, (6565, 3137));
     assert_eq!(day7()?, (161, 30899));
+    assert_eq!(day8()?, (1941, 2096));
     Ok(())
 }
