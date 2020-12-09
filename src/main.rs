@@ -352,8 +352,7 @@ fn day8() -> Result<(i32, i32), Box<dyn Error>> {
         let line = line?;
         let mut it = line.split(' ');
         let opcode = it.next().unwrap();
-        let param = it.next().unwrap();
-        let param = param.parse().unwrap();
+        let param = it.next().unwrap().parse()?;
         let instruction = match opcode {
             "nop" => Instruction::Nop(param),
             "acc" => Instruction::Acc(param),
@@ -413,6 +412,45 @@ fn day8() -> Result<(i32, i32), Box<dyn Error>> {
     panic!("no solution");
 }
 
+fn day9() -> Result<(u64, u64), Box<dyn Error>> {
+    let file = File::open("day9.txt")?;
+    let reader = BufReader::new(file);
+    let mut xs = Vec::new();
+    for line in reader.lines() {
+        xs.push(line?.parse::<u64>()?);
+    }
+    const WINDOW_SIZE: usize = 25;
+    let mut p1 = 0;
+    for i in WINDOW_SIZE..xs.len() {
+        let mut ok = false;
+        'outer: for j in i - WINDOW_SIZE..i - 1 {
+            for k in j + 1..i {
+                if xs[i] == xs[j] + xs[k] {
+                    ok = true;
+                    break 'outer;
+                }
+            }
+        }
+        if !ok {
+            p1 = xs[i];
+            break;
+        }
+    }
+    let mut prefix_sums = vec![0; xs.len() + 1];
+    for i in 1..xs.len() {
+        prefix_sums[i] = prefix_sums[i - 1] + xs[i - 1];
+    }
+    for i in 0..xs.len() - 1 {
+        for j in i..xs.len() {
+            if prefix_sums[j] - prefix_sums[i] == p1 {
+                let p2 = xs[i..j].iter().min().unwrap() + xs[i..j].iter().max().unwrap();
+                return Ok((p1, p2));
+            }
+        }
+    }
+    panic!("no solution");
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     assert_eq!(day1()?, (539851, 212481360));
     day2()?;
@@ -422,5 +460,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     assert_eq!(day6()?, (6565, 3137));
     assert_eq!(day7()?, (161, 30899));
     assert_eq!(day8()?, (1941, 2096));
+    assert_eq!(day9()?, (1639024365, 219202240));
     Ok(())
 }
