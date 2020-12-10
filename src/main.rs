@@ -451,6 +451,33 @@ fn day9() -> Result<(u64, u64), Box<dyn Error>> {
     panic!("no solution");
 }
 
+fn day10() -> Result<(usize, usize), Box<dyn Error>> {
+    let file = File::open("day10.txt")?;
+    let reader = BufReader::new(file);
+    let mut xs = Vec::new();
+    for line in reader.lines() {
+        xs.push(line?.parse::<usize>()?);
+    }
+    xs.sort();
+    let mut cd1 = 1;
+    let mut cd3 = 1;
+    for w in xs.windows(2) {
+        match w[1] - w[0] {
+            1 => cd1 += 1,
+            3 => cd3 += 1,
+            _ => {}
+        }
+    }
+    let mut s = vec![0usize; xs.last().unwrap() + 1];
+    s[0] = 1;
+    for &x in &xs {
+        for i in x.saturating_sub(3)..x {
+            s[x] += s[i];
+        }
+    }
+    Ok((cd1 * cd3, *s.last().unwrap()))
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     assert_eq!(day1()?, (539851, 212481360));
     day2()?;
@@ -461,5 +488,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     assert_eq!(day7()?, (161, 30899));
     assert_eq!(day8()?, (1941, 2096));
     assert_eq!(day9()?, (1639024365, 219202240));
+    assert_eq!(day10()?, (1625, 3100448333024));
     Ok(())
 }
