@@ -588,6 +588,73 @@ fn day11() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn day12() -> Result<(i32, i32), Box<dyn Error>> {
+    let file = File::open("day12.txt")?;
+    let reader = BufReader::new(file);
+
+    let mut x1 = 0;
+    let mut y1 = 0;
+    let mut a = 3;
+    let mut x2 = 0;
+    let mut y2 = 0;
+    let mut xw = 10;
+    let mut yw = 1;
+
+    const D: [(i32, i32); 4] = [(0, 1), (-1, 0), (0, -1), (1, 0)];
+    fn rot(x: i32, y: i32, a: usize) -> (i32, i32) {
+        const SIN: [i32; 4] = [0, 1, 0, -1];
+        const COS: [i32; 4] = [1, 0, -1, 0];
+        (x * COS[a] - y * SIN[a], x * SIN[a] + y * COS[a])
+    }
+
+    for line in reader.lines() {
+        let line = line?;
+        let c = line.as_bytes()[0];
+        let d = line[1..].parse::<i32>()?;
+        match c {
+            b'N' => {
+                y1 += d;
+                yw += d;
+            }
+            b'W' => {
+                x1 -= d;
+                xw -= d;
+            }
+            b'S' => {
+                y1 -= d;
+                yw -= d;
+            }
+            b'E' => {
+                x1 += d;
+                xw += d;
+            }
+            b'L' => {
+                let d = (d / 90) as usize;
+                a = (a + d) % 4;
+                let r = rot(xw, yw, d as usize);
+                xw = r.0;
+                yw = r.1;
+            }
+            b'R' => {
+                let d = (d / 90) as usize;
+                a = (4 + a - d) % 4;
+                let r = rot(xw, yw, 4 - d as usize);
+                xw = r.0;
+                yw = r.1;
+            }
+            b'F' => {
+                x1 += d * D[a].0;
+                y1 += d * D[a].1;
+                x2 += d * xw;
+                y2 += d * yw;
+            }
+            _ => unreachable!(),
+        }
+    }
+
+    Ok((x1.abs() + y1.abs(), x2.abs() + y2.abs()))
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     assert_eq!(day1()?, (539851, 212481360));
     day2()?;
@@ -600,5 +667,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     assert_eq!(day9()?, (1639024365, 219202240));
     assert_eq!(day10()?, (1625, 3100448333024));
     day11()?;
+    assert_eq!(day12()?, (904, 18747));
+    day12()?;
     Ok(())
 }
