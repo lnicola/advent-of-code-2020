@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet, VecDeque};
 use std::error::Error;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
-use std::iter;
+use std::{iter, mem};
 
 use self::interner::Interner;
 
@@ -478,6 +478,116 @@ fn day10() -> Result<(usize, usize), Box<dyn Error>> {
     Ok((cd1 * cd3, *s.last().unwrap()))
 }
 
+fn day11() -> Result<(), Box<dyn Error>> {
+    let file = File::open("day11.txt")?;
+    let reader = BufReader::new(file);
+
+    let mut map = Vec::new();
+    let mut height = 0;
+    for line in reader.lines() {
+        map.extend_from_slice(line?.as_bytes());
+        height += 1;
+    }
+    let width = map.len() / height;
+
+    const D: [(isize, isize); 8] = [
+        (-1, 0),
+        (1, 0),
+        (0, -1),
+        (0, 1),
+        (-1, -1),
+        (1, 1),
+        (1, -1),
+        (-1, 1),
+    ];
+
+    fn transition(current: u8, neighbors: usize, max_neighbors: usize) -> u8 {
+        match current {
+            b'.' => b'.',
+            b'L' if neighbors == 0 => b'#',
+            b'L' => b'L',
+            b'#' if neighbors < max_neighbors => b'#',
+            b'#' => b'L',
+            _ => unreachable!(),
+        }
+    }
+
+    let orig = map.clone();
+    let mut new = vec![0; map.len()];
+    loop {
+        for i in 0..height {
+            for j in 0..width {
+                let count = D
+                    .iter()
+                    .map(|&(dx, dy)| (j as isize + dx, i as isize + dy))
+                    .filter(|(x, y)| {
+                        (0..width as isize).contains(x) && (0..height as isize).contains(y)
+                    })
+                    .map(|(x, y)| (x as usize, y as usize))
+                    .filter(|(x, y)| map[y * width + x] == b'#')
+                    .count();
+                new[i * width + j] = transition(map[i * width + j], count, 4);
+            }
+        }
+        if new == map {
+            break;
+        }
+        mem::swap(&mut map, &mut new);
+    }
+    dbg!(map.iter().filter(|&&c| c == b'#').count());
+
+    map = orig;
+    loop {
+        fn first(
+            map: &[u8],
+            width: usize,
+            height: usize,
+            x: usize,
+            y: usize,
+            dx: isize,
+            dy: isize,
+        ) -> u8 {
+            let mut x = x as isize;
+            let mut y = y as isize;
+            loop {
+                x += dx;
+                y += dy;
+                if !(0..width as isize).contains(&x) || !(0..height as isize).contains(&y) {
+                    return 0;
+                }
+                let x = x as usize;
+                let y = y as usize;
+                match map[y * width + x as usize] {
+                    b'#' => {
+                        return b'#';
+                    }
+                    b'L' => {
+                        return b'L';
+                    }
+                    _ => {}
+                }
+            }
+        }
+        for i in 0..height {
+            for j in 0..width {
+                let count = D
+                    .iter()
+                    .map(|&(dx, dy)| first(&map, width, height, j, i, dx, dy))
+                    .filter(|&s| s == b'#')
+                    .count();
+
+                new[i * width + j] = transition(map[i * width + j], count, 5);
+            }
+        }
+        if new == map {
+            break;
+        }
+        mem::swap(&mut map, &mut new);
+    }
+    dbg!(map.iter().filter(|&&c| c == b'#').count());
+    Ok(())
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     assert_eq!(day1()?, (539851, 212481360));
     day2()?;
@@ -489,5 +599,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     assert_eq!(day8()?, (1941, 2096));
     assert_eq!(day9()?, (1639024365, 219202240));
     assert_eq!(day10()?, (1625, 3100448333024));
+    day11()?;
     Ok(())
 }
