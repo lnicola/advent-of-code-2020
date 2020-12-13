@@ -6,6 +6,7 @@ use std::{iter, mem};
 
 use self::interner::Interner;
 
+mod arith;
 pub mod interner;
 
 fn day1() -> Result<(u32, u32), Box<dyn Error>> {
@@ -45,7 +46,7 @@ fn day1() -> Result<(u32, u32), Box<dyn Error>> {
     panic!("no solution")
 }
 
-fn day2() -> Result<(), Box<dyn Error>> {
+fn day2() -> Result<(i32, i32), Box<dyn Error>> {
     let file = File::open("day2.txt")?;
     let reader = BufReader::new(file);
     let mut valid1 = 0;
@@ -67,11 +68,10 @@ fn day2() -> Result<(), Box<dyn Error>> {
             valid2 += 1;
         }
     }
-    println!("{} {}", valid1, valid2);
-    Ok(())
+    Ok((valid1, valid2))
 }
 
-fn day3() -> Result<(), Box<dyn Error>> {
+fn day3() -> Result<(i32, i32), Box<dyn Error>> {
     let file = File::open("day3.txt")?;
     let reader = BufReader::new(file);
 
@@ -103,15 +103,11 @@ fn day3() -> Result<(), Box<dyn Error>> {
     let trees_51 = run(5, 1);
     let trees_71 = run(7, 1);
     let trees_12 = run(1, 2);
-    println!(
-        "{} {}",
-        trees_31,
-        trees_11 * trees_31 * trees_51 * trees_71 * trees_12
-    );
-    Ok(())
+    let p2 = trees_11 * trees_31 * trees_51 * trees_71 * trees_12;
+    Ok((trees_31, p2))
 }
 
-fn day4() -> Result<(), Box<dyn Error>> {
+fn day4() -> Result<(i32, i32), Box<dyn Error>> {
     let file = File::open("day4.txt")?;
     let reader = BufReader::new(file);
 
@@ -201,8 +197,7 @@ fn day4() -> Result<(), Box<dyn Error>> {
             }
         }
     }
-    println!("{} {}", valid1, valid2);
-    Ok(())
+    Ok((valid1, valid2))
 }
 
 fn day5() -> Result<(u16, u16), Box<dyn Error>> {
@@ -478,7 +473,7 @@ fn day10() -> Result<(usize, usize), Box<dyn Error>> {
     Ok((cd1 * cd3, *s.last().unwrap()))
 }
 
-fn day11() -> Result<(), Box<dyn Error>> {
+fn day11() -> Result<(usize, usize), Box<dyn Error>> {
     let file = File::open("day11.txt")?;
     let reader = BufReader::new(file);
 
@@ -534,7 +529,7 @@ fn day11() -> Result<(), Box<dyn Error>> {
         }
         mem::swap(&mut map, &mut new);
     }
-    dbg!(map.iter().filter(|&&c| c == b'#').count());
+    let p1 = map.iter().filter(|&&c| c == b'#').count();
 
     map = orig;
     loop {
@@ -584,8 +579,8 @@ fn day11() -> Result<(), Box<dyn Error>> {
         }
         mem::swap(&mut map, &mut new);
     }
-    dbg!(map.iter().filter(|&&c| c == b'#').count());
-    Ok(())
+    let p2 = map.iter().filter(|&&c| c == b'#').count();
+    Ok((p1, p2))
 }
 
 fn day12() -> Result<(i32, i32), Box<dyn Error>> {
@@ -686,37 +681,23 @@ fn day13() -> Result<(i64, i64), Box<dyn Error>> {
             modulii.push(id as i64);
         }
     }
-    let p2 = chinese_remainder(residues.as_slice(), modulii.as_slice()).unwrap();
+    let p2 = arith::chinese_remainder(residues.as_slice(), modulii.as_slice()).unwrap();
     Ok((p1, p2))
-}
-
-fn chinese_remainder(residues: &[i64], modulii: &[i64]) -> Option<i64> {
-    let prod = modulii.iter().product::<i64>();
-
-    let mut sum = 0;
-
-    for (&residue, &modulus) in residues.iter().zip(modulii) {
-        let p = prod / modulus;
-        sum += residue * modinverse::modinverse(p, modulus)? * p
-    }
-
-    Some(sum % prod)
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
     assert_eq!(day1()?, (539851, 212481360));
-    day2()?;
-    day3()?;
-    day4()?;
+    assert_eq!(day2()?, (556, 605));
+    assert_eq!(day3()?, (257, 1744787392));
+    assert_eq!(day4()?, (256, 198));
     assert_eq!(day5()?, (947, 636));
     assert_eq!(day6()?, (6565, 3137));
     assert_eq!(day7()?, (161, 30899));
     assert_eq!(day8()?, (1941, 2096));
     assert_eq!(day9()?, (1639024365, 219202240));
     assert_eq!(day10()?, (1625, 3100448333024));
-    day11()?;
+    assert_eq!(day11()?, (2283, 2054));
     assert_eq!(day12()?, (904, 18747));
-    day12()?;
     assert_eq!(day13()?, (2545, 266204454441577));
     Ok(())
 }
