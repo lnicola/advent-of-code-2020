@@ -454,8 +454,8 @@ fn day10() -> Result<(usize, usize), Box<dyn Error>> {
         xs.push(line?.parse::<usize>()?);
     }
     xs.sort();
-    let mut cd1 = 1;
-    let mut cd3 = 1;
+    let mut cd1 = (xs[0] == 1) as usize;
+    let mut cd3 = 1 + (xs[0] == 3) as usize;
     for w in xs.windows(2) {
         match w[1] - w[0] {
             1 => cd1 += 1,
