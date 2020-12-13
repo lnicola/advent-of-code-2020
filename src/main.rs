@@ -655,6 +655,54 @@ fn day12() -> Result<(i32, i32), Box<dyn Error>> {
     Ok((x1.abs() + y1.abs(), x2.abs() + y2.abs()))
 }
 
+fn day13() -> Result<(i64, i64), Box<dyn Error>> {
+    let file = File::open("day13.txt")?;
+    let mut reader = BufReader::new(file);
+    let mut s = String::new();
+    reader.read_line(&mut s)?;
+    let earliest = s.trim_end().parse::<i64>()?;
+    s.clear();
+    reader.read_line(&mut s)?;
+    let mut ids = Vec::new();
+    for x in s.split(',') {
+        let id = match x {
+            "x" => 0,
+            x => x.trim_end().parse()?,
+        };
+        ids.push(id);
+    }
+    let p1 = ids
+        .iter()
+        .filter(|&&id| id != 0)
+        .map(|&id| (id, id - earliest % id))
+        .min_by_key(|p| p.1)
+        .map(|(id, wait)| id * wait)
+        .unwrap();
+    let mut residues = Vec::new();
+    let mut modulii = Vec::new();
+    for (p, &id) in ids.iter().enumerate() {
+        if id != 0 {
+            residues.push((id - p as i64 % id) as i64);
+            modulii.push(id as i64);
+        }
+    }
+    let p2 = chinese_remainder(residues.as_slice(), modulii.as_slice()).unwrap();
+    Ok((p1, p2))
+}
+
+fn chinese_remainder(residues: &[i64], modulii: &[i64]) -> Option<i64> {
+    let prod = modulii.iter().product::<i64>();
+
+    let mut sum = 0;
+
+    for (&residue, &modulus) in residues.iter().zip(modulii) {
+        let p = prod / modulus;
+        sum += residue * modinverse::modinverse(p, modulus)? * p
+    }
+
+    Some(sum % prod)
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     assert_eq!(day1()?, (539851, 212481360));
     day2()?;
@@ -669,5 +717,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     day11()?;
     assert_eq!(day12()?, (904, 18747));
     day12()?;
+    assert_eq!(day13()?, (2545, 266204454441577));
     Ok(())
 }
