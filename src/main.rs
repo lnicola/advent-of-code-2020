@@ -685,6 +685,97 @@ fn day13() -> Result<(i64, i64), Box<dyn Error>> {
     Ok((p1, p2))
 }
 
+fn day14() -> Result<(i64, i64), Box<dyn Error>> {
+    let file = File::open("day14.txt")?;
+    let mut reader = BufReader::new(file);
+    let mut s = String::new();
+    let mut and_mask = !0u64;
+    let mut or_mask = 0;
+    let mut mem = HashMap::new();
+    while reader.read_line(&mut s)? > 0 {
+        if s.starts_with("mask = ") {
+            and_mask = u64::from_str_radix(
+                &(s[7..]
+                    .trim_end()
+                    .chars()
+                    .map(|c| if c == 'X' { '1' } else { c })
+                    .collect::<String>()),
+                2,
+            )?;
+            or_mask = u64::from_str_radix(
+                &(s[7..]
+                    .trim_end()
+                    .chars()
+                    .map(|c| if c == 'X' { '0' } else { c })
+                    .collect::<String>()),
+                2,
+            )?;
+        } else {
+            let p1 = s.find(']').unwrap();
+            let addr = (&s[4..])[..p1 - 4].parse::<u64>()?;
+            let p2 = s.find('=').unwrap();
+            let val = u64::from_str_radix(&s.trim_end()[p2 + 2..], 10)?;
+            let val = val & and_mask | or_mask;
+            mem.insert(addr, val);
+        }
+        s.clear();
+    }
+    dbg!(mem.values().sum::<u64>());
+
+    let file = File::open("day14.txt")?;
+    let mut reader = BufReader::new(file);
+    let mut s = String::new();
+    let mut or_mask = 0;
+    let mut floating_mask = 0;
+    let mut mem = HashMap::new();
+    while reader.read_line(&mut s)? > 0 {
+        if s.starts_with("mask = ") {
+            or_mask = u64::from_str_radix(
+                &(s[7..]
+                    .trim_end()
+                    .chars()
+                    .map(|c| if c == '1' { '1' } else { '0' })
+                    .collect::<String>()),
+                2,
+            )?;
+            floating_mask = u64::from_str_radix(
+                &(s[7..]
+                    .trim_end()
+                    .chars()
+                    .map(|c| if c == 'X' { '1' } else { '0' })
+                    .collect::<String>()),
+                2,
+            )?;
+        } else {
+            let p1 = s.find(']').unwrap();
+            let mut addr = (&s[4..][..p1 - 4]).parse::<u64>()?;
+            let p2 = s.find('=').unwrap();
+            let val = u64::from_str_radix(&s.trim_end()[p2 + 2..], 10)?;
+            addr = addr & !floating_mask | or_mask;
+            let floating_bits = floating_mask.count_ones();
+            for floating in 0..(1 << floating_bits) {
+                let mut f = floating;
+                let mut mask = floating_mask;
+                let mut m = 0;
+                let mut s = 0;
+                while f > 0 {
+                    if mask & 1 == 1 {
+                        m |= (f & 1) << s;
+                        f >>= 1;
+                    } else {
+                    }
+                    mask >>= 1;
+                    s += 1;
+                }
+                mem.insert(addr | m, val);
+            }
+        }
+        s.clear();
+    }
+    dbg!(mem.values().sum::<u64>());
+    Ok((0, 0))
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     assert_eq!(day1()?, (539851, 212481360));
     assert_eq!(day2()?, (556, 605));
@@ -699,5 +790,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     assert_eq!(day11()?, (2283, 2054));
     assert_eq!(day12()?, (904, 18747));
     assert_eq!(day13()?, (2545, 266204454441577));
+    day14()?;
     Ok(())
 }
