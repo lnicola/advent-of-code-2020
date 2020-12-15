@@ -776,6 +776,32 @@ fn day14() -> Result<(i64, i64), Box<dyn Error>> {
     Ok((0, 0))
 }
 
+fn day15() -> Result<(), Box<dyn Error>> {
+    let starting_numbers = [9, 12, 1, 4, 17, 0, 18];
+    let mut when = HashMap::new();
+    for (p, &n) in starting_numbers.iter().enumerate() {
+        when.insert(n, p);
+        dbg!(n);
+    }
+    let mut lastw = when
+        .get(&(starting_numbers[starting_numbers.len() - 1]))
+        .copied();
+    let mut last = starting_numbers[starting_numbers.len() - 1];
+    for i in starting_numbers.len()..30000000 {
+        if let Some(t) = lastw {
+            last = i - 1 - t;
+            lastw = when.get(&last).copied();
+            when.insert(last, i);
+        } else {
+            last = 0;
+            lastw = when.get(&last).copied();
+            when.insert(0, i);
+        }
+    }
+    dbg!(last);
+    Ok(())
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     assert_eq!(day1()?, (539851, 212481360));
     assert_eq!(day2()?, (556, 605));
@@ -791,5 +817,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     assert_eq!(day12()?, (904, 18747));
     assert_eq!(day13()?, (2545, 266204454441577));
     day14()?;
+    day15()?;
     Ok(())
 }
